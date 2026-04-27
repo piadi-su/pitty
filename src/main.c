@@ -4,44 +4,52 @@
 typedef struct {
     gchar *shell;
     gchar *font;
-    GtkWidget *notebook;
+
+    gchar *theme;
+    gdouble transparency;
+    gchar *mode;
+
+    GtkWidget *window;
 } AppData;
 
 /* ---------------- CONFIG ---------------- */
 
 void load_config(AppData *app) {
-    GKeyFile *keyfile = g_key_file_new();
-    gchar *path = g_build_filename(g_get_home_dir(), ".simple_terminal.conf", NULL);
+    GKeyFile *kf = g_key_file_new();
+    gchar *path = g_build_filename(g_get_home_dir(), ".config/pitty/pitty.conf", NULL);
 
-    if (!g_key_file_load_from_file(keyfile, path, G_KEY_FILE_NONE, NULL)) {
+    if (!g_key_file_load_from_file(kf, path, G_KEY_FILE_NONE, NULL)) {
         app->shell = g_strdup(g_getenv("SHELL") ? g_getenv("SHELL") : "/bin/bash");
         app->font  = g_strdup("Monospace 12");
+
+        app->theme = g_strdup("dark");
+        app->transparency = 1.0;
+        app->mode = g_strdup("normal");
     } else {
-        app->shell = g_key_file_get_string(keyfile, "main", "shell", NULL);
-        app->font  = g_key_file_get_string(keyfile, "main", "font", NULL);
+        app->shell = g_key_file_get_string(kf, "main", "shell", NULL);
+        app->font  = g_key_file_get_string(kf, "main", "font", NULL);
+
+        app->theme = g_key_file_get_string(kf, "main", "theme", NULL);
+        app->transparency = g_key_file_get_double(kf, "main", "transparency", NULL);
+        app->mode = g_key_file_get_string(kf, "main", "mode", NULL);
 
         if (!app->shell) app->shell = g_strdup("/bin/bash");
         if (!app->font)  app->font  = g_strdup("Monospace 12");
+        if (!app->theme) app->theme = g_strdup("dark");
+        if (!app->mode)  app->mode  = g_strdup("normal");
+        if (app->transparency <= 0) app->transparency = 1.0;
     }
 
-    g_key_file_free(keyfile);
+    g_key_file_free(kf);
     g_free(path);
 }
 
 /* ---------------- EXIT HANDLER ---------------- */
 
 void on_child_exit(VteTerminal *term, gint status, gpointer user_data) {
-    GtkWidget *notebook = GTK_WIDGET(user_data);
+    GtkWidget *window = GTK_WIDGET(user_data);
 
-    int page = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), GTK_WIDGET(term));
-
-    if (page != -1)
-        gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), page);
-
-    if (gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook)) == 0) {
-        GtkWidget *win = gtk_widget_get_toplevel(notebook);
-        gtk_window_close(GTK_WINDOW(win));
-    }
+    gtk_window_close(GTK_WINDOW(window));
 }
 
 /* ---------------- TERMINAL ---------------- */
@@ -49,14 +57,13 @@ void on_child_exit(VteTerminal *term, gint status, gpointer user_data) {
 GtkWidget* create_terminal(AppData *app) {
     GtkWidget *term = vte_terminal_new();
 
-    /* SCROLLBACK */
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(term), 10000);
 
-    /* ---------------- FONT FIX SERIO ---------------- */
+    /* FONT */
     PangoFontDescription *desc = pango_font_description_from_string(app->font);
 
     if (!desc || !pango_font_description_get_family(desc)) {
-        g_warning("Font non valido: %s, uso Monospace", app->font);
+        g_warning("Font non valido: %s", app->font);
         if (desc) pango_font_description_free(desc);
         desc = pango_font_description_from_string("Monospace 12");
     }
@@ -65,7 +72,7 @@ GtkWidget* create_terminal(AppData *app) {
     vte_terminal_set_font(VTE_TERMINAL(term), desc);
     pango_font_description_free(desc);
 
-    /* ---------------- SHELL ---------------- */
+    /* SHELL */
     char *argv[] = { app->shell, NULL };
 
     vte_terminal_spawn_async(
@@ -82,46 +89,27 @@ GtkWidget* create_terminal(AppData *app) {
         NULL, NULL
     );
 
-    g_signal_connect(term, "child-exited", G_CALLBACK(on_child_exit), app->notebook);
+    /* EXIT FIX */
+    g_signal_connect(term, "child-exited", G_CALLBACK(on_child_exit), app->window);
 
     return term;
 }
 
-/* ---------------- TAB ---------------- */
+/* ---------------- STYLE ---------------- */
 
-void new_tab(AppData *app) {
-    GtkWidget *term = create_terminal(app);
-    GtkWidget *label = gtk_label_new("Terminal");
+void apply_style(AppData *app) {
+    gboolean dark = (g_strcmp0(app->theme, "dark") == 0);
 
-    int page = gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), term, label);
-    gtk_widget_show_all(term);
+    GtkSettings *settings = gtk_settings_get_default();
+    g_object_set(settings,
+        "gtk-application-prefer-dark-theme", dark,
+        NULL);
 
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), page);
-}
+    gtk_widget_set_opacity(app->window, app->transparency);
 
-void close_tab(AppData *app) {
-    int page = gtk_notebook_get_current_page(GTK_NOTEBOOK(app->notebook));
-    if (page != -1)
-        gtk_notebook_remove_page(GTK_NOTEBOOK(app->notebook), page);
-}
-
-/* ---------------- SHORTCUTS ---------------- */
-
-gboolean on_key(GtkWidget *w, GdkEventKey *e, gpointer data) {
-    AppData *app = data;
-
-    if ((e->state & GDK_CONTROL_MASK) && (e->state & GDK_SHIFT_MASK)) {
-        if (e->keyval == GDK_KEY_T) {
-            new_tab(app);
-            return TRUE;
-        }
-        if (e->keyval == GDK_KEY_W) {
-            close_tab(app);
-            return TRUE;
-        }
+    if (g_strcmp0(app->mode, "minimal") == 0) {
+        gtk_window_set_decorated(GTK_WINDOW(app->window), FALSE);
     }
-
-    return FALSE;
 }
 
 /* ---------------- UI ---------------- */
@@ -129,28 +117,15 @@ gboolean on_key(GtkWidget *w, GdkEventKey *e, gpointer data) {
 static void activate(GtkApplication *gtk_app, gpointer user_data) {
     AppData *app = user_data;
 
-    GtkWidget *win = gtk_application_window_new(gtk_app);
-    gtk_window_set_default_size(GTK_WINDOW(win), 900, 600);
+    app->window = gtk_application_window_new(gtk_app);
+    gtk_window_set_default_size(GTK_WINDOW(app->window), 900, 600);
 
-    GtkWidget *header = gtk_header_bar_new();
-    gtk_header_bar_set_title(GTK_HEADER_BAR(header), "pitty");
-    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(header), TRUE);
-    gtk_window_set_titlebar(GTK_WINDOW(win), header);
+    apply_style(app);
 
-    GtkWidget *btn = gtk_button_new_with_label("+");
-    g_signal_connect_swapped(btn, "clicked", G_CALLBACK(new_tab), app);
-    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), btn);
+    GtkWidget *term = create_terminal(app);
+    gtk_container_add(GTK_CONTAINER(app->window), term);
 
-    app->notebook = gtk_notebook_new();
-    gtk_notebook_set_scrollable(GTK_NOTEBOOK(app->notebook), TRUE);
-
-    gtk_container_add(GTK_CONTAINER(win), app->notebook);
-
-    new_tab(app);
-
-    g_signal_connect(win, "key-press-event", G_CALLBACK(on_key), app);
-
-    gtk_widget_show_all(win);
+    gtk_widget_show_all(app->window);
 }
 
 /* ---------------- MAIN ---------------- */
@@ -175,6 +150,8 @@ int main(int argc, char **argv) {
 
     g_free(data.shell);
     g_free(data.font);
+    g_free(data.theme);
+    g_free(data.mode);
 
     return status;
 }
