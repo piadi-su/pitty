@@ -13,10 +13,7 @@ if ! command -v gcc >/dev/null; then
     exit 1
 fi
 
-if ! pkg-config --exists gtk+-3.0 vte-2.91; then
-    echo "Installing dependencies..."
-    sudo pacman -S --noconfirm gtk3 vte3
-fi
+
 
 rm -rf "$REPO_DIR"
 mkdir -p "$REPO_DIR"
