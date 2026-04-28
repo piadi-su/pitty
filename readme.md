@@ -28,8 +28,16 @@ transparency=0.85
 mode=minimal
 
 cursor=block
+cursor_blink=true
 ```
 
+#### keybinds
+| ---------------- | ---------- |
+| Ctrl + Shift + C | Copy       |
+| Ctrl + Shift + V | paste      |
+| Ctrl + Shift + + | Zoom in    |
+| Ctrl + Shift + - | Zoom out   |
+| Ctrl + L         | Clear      |
 
 the transparency goes from 1 to 0.0
 
@@ -45,7 +53,12 @@ there are 2 cursor
 - block
 - beam
 
+there are 2 blink
+- true
+- false
+----
 ### thing's to add
 
-- [ ] blinking cursor
+- [x] blinking cursor
+- [ ] curstom theme's
 
