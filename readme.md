@@ -32,12 +32,13 @@ cursor_blink=true
 ```
 
 #### keybinds
-| ---------------- | ---------- |
-| Ctrl + Shift + C | Copy       |
-| Ctrl + Shift + V | paste      |
-| Ctrl + Shift + + | Zoom in    |
-| Ctrl + Shift + - | Zoom out   |
-| Ctrl + L         | Clear      |
+| shortcut          | action   |
+|-------------------|-----------|
+| Ctrl + Shift + C  | Copy      |
+| Ctrl + Shift + V  | Paste     |
+| Ctrl + Shift + +  | Zoom in   |
+| Ctrl + Shift + -  | Zoom out  |
+| Ctrl + L          | Clear     |
 
 the transparency goes from 1 to 0.0
 
