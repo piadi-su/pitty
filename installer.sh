@@ -1,4 +1,4 @@
-#!/usr/bin/
+#!/bin/bash
 
 set -e
 
@@ -22,7 +22,7 @@ if [ -d "./src" ]; then
     cp -r ./src "$REPO_DIR/"
 else
     echo "Downloading source..."
-    git clone https://github.com/yourname/pitty.git "$REPO_DIR"
+    git clone https://github.com/piadi-su/pitty.git "$REPO_DIR"
 fi
 
 echo "Compiling..."
