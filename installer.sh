@@ -1,36 +1,9 @@
 #!/bin/bash
-
 set -e
 
 APP_NAME="pitty"
 REPO_DIR="/tmp/pitty_build"
 BIN_NAME="pitty"
-
-# WARNING INIZIALE
-echo "======================================"
-echo "        PITTY INSTALLER"
-echo "======================================"
-echo ""
-echo "Prerequisites:"
-echo "  - git"
-echo "  - gcc"
-echo "  - GTK3 (pkg-config gtk+-3.0)"
-echo "  - VTE3 (pkg-config vte-2.91)"
-echo ""
-echo "Make sure they are installed on your system."
-echo ""
-echo "Quick check (optional):"
-echo "  git --version"
-echo "  gcc --version"
-echo "  pkg-config --exists gtk+-3.0"
-echo "  pkg-config --exists vte-2.91"
-echo ""
-read -p "Continue anyway? (y/n): " confirm
-
-if [[ "$confirm" != "y" ]]; then
-    echo "Aborted."
-    exit 1
-fi
 
 # MENU
 menu() {
@@ -46,6 +19,25 @@ menu() {
 3) remove
 
 EOF
+}
+
+# CONFIRM 
+confirm_install() {
+    confirm="n"
+
+    if [[ -t 0 ]]; then
+        read -p "Continue? (y/N): " confirm
+        confirm=${confirm:-n}
+    else
+        echo "Non-interactive mode detected (curl | bash)."
+        echo "Aborting for safety. Run in terminal instead."
+        exit 1
+    fi
+
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo "Aborted."
+        exit 1
+    fi
 }
 
 # DESKTOP ENTRY
@@ -85,7 +77,7 @@ install() {
 
     create_desktop
 
-    echo "Installation complete."
+    echo "Installation complete ✔"
 }
 
 # UPDATE
@@ -110,7 +102,7 @@ update() {
 
     create_desktop
 
-    echo "Update complete."
+    echo "Update complete ✔"
 }
 
 # REMOVE
@@ -120,16 +112,31 @@ remove() {
     sudo rm -f /usr/local/bin/$BIN_NAME
     rm -f "$HOME/.local/share/applications/pitty.desktop"
 
-    echo "Removed."
+    echo "Removed ✔"
 }
 
 # MAIN
-menu
-read -p "➜ " usr_input
+main() {
+    menu
+    read -p "➜ " usr_input
 
-case "$usr_input" in
-    1) install ;;
-    2) update ;;
-    3) remove ;;
-    *) echo "Invalid choice" ;;
-esac
+    case "$usr_input" in
+        1)
+            confirm_install
+            install
+            ;;
+        2)
+            confirm_install
+            update
+            ;;
+        3)
+            confirm_install
+            remove
+            ;;
+        *)
+            echo "Invalid choice"
+            ;;
+    esac
+}
+
+main
