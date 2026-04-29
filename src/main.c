@@ -1,11 +1,12 @@
 #include <gtk/gtk.h>
 #include <vte/vte.h>
 
-// APP DATA
+// ================= APP DATA =================
 
 typedef struct {
     gchar *shell;
     gchar *font;
+
     gchar *theme;
     gdouble transparency;
     gchar *mode;
@@ -16,9 +17,104 @@ typedef struct {
     GtkWidget *window;
 } AppData;
 
-// CONFIG
+// ================= THEME =================
+
+static gboolean parse_hex_color(const gchar *hex, GdkRGBA *color) {
+    return gdk_rgba_parse(color, hex);
+}
+
+static void apply_theme(VteTerminal *term, AppData *app) {
+
+    gchar *theme_path = NULL;
+
+    // ================= PYWAL =================
+
+    if (g_strcmp0(app->theme, "pywal") == 0) {
+
+        theme_path = g_build_filename(
+            g_get_home_dir(),
+            ".cache",
+            "wal",
+            "colors",
+            NULL
+        );
+
+    } else {
+
+        // ================= CUSTOM THEMES =================
+
+        gchar *filename = g_strdup_printf(
+            "%s.conf",
+            app->theme
+        );
+
+        theme_path = g_build_filename(
+            g_get_home_dir(),
+            ".config",
+            "pitty",
+            "themes",
+            filename,
+            NULL
+        );
+
+        g_free(filename);
+    }
+
+    FILE *fp = fopen(theme_path, "r");
+
+    if (!fp) {
+        g_free(theme_path);
+        return;
+    }
+
+    gchar line[128];
+
+    GdkRGBA fg;
+    GdkRGBA bg;
+    GdkRGBA palette[16];
+
+    int color_index = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+
+        line[strcspn(line, "\n")] = 0;
+
+        if (strlen(line) < 7)
+            continue;
+
+        GdkRGBA color;
+
+        if (!parse_hex_color(line, &color))
+            continue;
+
+        if (color_index == 0)
+            bg = color;
+        else if (color_index == 7)
+            fg = color;
+
+        if (color_index < 16)
+            palette[color_index] = color;
+
+        color_index++;
+    }
+
+    fclose(fp);
+
+    vte_terminal_set_colors(
+        term,
+        &fg,
+        &bg,
+        palette,
+        16
+    );
+
+    g_free(theme_path);
+}
+
+// ================= CONFIG =================
 
 void load_config(AppData *app) {
+
     GKeyFile *kf = g_key_file_new();
 
     gchar *path = g_build_filename(
@@ -27,18 +123,18 @@ void load_config(AppData *app) {
         NULL
     );
 
-    // DEFAULT CONFIG
+    // DEFAULTS
 
     app->shell = g_strdup("/bin/bash");
     app->font = g_strdup("Monospace 12");
-    app->theme = g_strdup("dark");
+
+    app->theme = g_strdup("pywal");
+
     app->transparency = 1.0;
     app->mode = g_strdup("normal");
 
     app->cursor = g_strdup("block");
     app->cursor_blink = TRUE;
-
-    // LOAD FILE
 
     if (g_key_file_load_from_file(
             kf,
@@ -116,7 +212,7 @@ void load_config(AppData *app) {
     g_free(path);
 }
 
-//  EXIT
+// ================= EXIT =================
 
 void on_child_exit(
     VteTerminal *term,
@@ -127,7 +223,7 @@ void on_child_exit(
     gtk_window_close(GTK_WINDOW(window));
 }
 
-// KEYBINDS 
+// ================= KEYBINDS =================
 
 gboolean on_key(
     GtkWidget *widget,
@@ -176,7 +272,7 @@ gboolean on_key(
                 scale -= 0.1;
                 break;
 
-            // RESET ZOOM
+            // RESET
 
             case GDK_KEY_0:
                 scale = 1.0;
@@ -200,9 +296,10 @@ gboolean on_key(
     return FALSE;
 }
 
-//TERMINAL 
+// ================= TERMINAL =================
 
 GtkWidget* create_terminal(AppData *app) {
+
     GtkWidget *term = vte_terminal_new();
 
     vte_terminal_set_scrollback_lines(
@@ -279,6 +376,10 @@ GtkWidget* create_terminal(AppData *app) {
             : VTE_CURSOR_BLINK_OFF
     );
 
+    // APPLY THEME
+
+    apply_theme(VTE_TERMINAL(term), app);
+
     // SIGNALS
 
     g_signal_connect(
@@ -298,21 +399,9 @@ GtkWidget* create_terminal(AppData *app) {
     return term;
 }
 
-// STYLE
+// ================= STYLE =================
 
 void apply_style(AppData *app) {
-    gboolean dark =
-        (g_strcmp0(app->theme, "dark") == 0);
-
-    GtkSettings *settings =
-        gtk_settings_get_default();
-
-    g_object_set(
-        settings,
-        "gtk-application-prefer-dark-theme",
-        dark,
-        NULL
-    );
 
     gtk_widget_set_opacity(
         app->window,
@@ -320,12 +409,13 @@ void apply_style(AppData *app) {
     );
 }
 
-// UI 
+// ================= UI =================
 
 static void activate(
     GtkApplication *gtk_app,
     gpointer user_data
 ) {
+
     AppData *app = user_data;
 
     app->window =
@@ -381,8 +471,10 @@ static void activate(
     gtk_widget_show_all(app->window);
 }
 
+// ================= MAIN =================
 
 int main(int argc, char **argv) {
+
     GtkApplication *app;
     int status;
 
@@ -412,8 +504,11 @@ int main(int argc, char **argv) {
 
     g_free(data.shell);
     g_free(data.font);
+
     g_free(data.theme);
+
     g_free(data.mode);
+
     g_free(data.cursor);
 
     return status;
