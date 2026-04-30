@@ -9,6 +9,6 @@ git clone https://github.com/piadi-su/pitty.git "$REPO_DIR"
 cd "$REPO_DIR"
 cd scripts
 
-chmod +x install.sh
+chmod +x installer.sh
 
-./install.sh
+./installer.sh
