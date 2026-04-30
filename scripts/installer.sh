@@ -9,7 +9,7 @@ BIN_NAME="pitty"
 menu() {
     cat << EOF
 
-  •      •      ┓┓    
+  .      .      ┓┓    
 ┏┓┓╋╋┓┏  ┓┏┓┏╋┏┓┃┃┏┓┏┓
 ┣┛┗┗┗┗┫  ┗┛┗┛┗┗┻┗┗┗ ┛ 
 ┛     ┛   
@@ -59,14 +59,6 @@ EOF
 install() {
     echo "Installing Pitty..."
 
-    rm -rf "$REPO_DIR"
-    mkdir -p "$REPO_DIR"
-
-    if [ -d "./src" ]; then
-        cp -r ./src "$REPO_DIR/"
-    else
-        git clone https://github.com/piadi-su/pitty.git "$REPO_DIR"
-    fi
 
     mkdir -p "$REPO_DIR/bin"
 

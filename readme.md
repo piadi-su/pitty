@@ -12,7 +12,7 @@ dependencies that you need
 - vte3
 
 ```bash
-curl -fsSl https://raw.githubusercontent.com/piadi-su/pitty/refs/heads/master/installer.sh | bash
+curl -fsSl https://raw.githubusercontent.com/piadi-su/pitty/refs/heads/master/scripts/deploy.sh | bash
 ```
 
 
@@ -37,7 +37,10 @@ cursor_blink=true
 
 for in order to use custom themes 
 your need to put them in .config/pitty/themes/
-
+you can alsow use pywal by doing:
+```text
+theme=pywal
+```
 
 ```text
 pitty
@@ -70,9 +73,5 @@ there are 2 blink
 - true
 - false
 ----
-### thing's to add
-
-- [x] blinking cursor
-- [x] curstom theme's
-- [ ] preset themes
+This project it's relised under the MIT license.
 
