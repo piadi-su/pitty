@@ -12,7 +12,12 @@ dependencies that you need
 - vte3
 
 ```bash
-curl -fsSl https://raw.githubusercontent.com/piadi-su/pitty/refs/heads/master/scripts/deploy.sh | bash
+git clone https://github.com/piadi-su/pitty.git /tmp/pitty_build
+
+cd /tmp/pitty_build/scripts/
+
+chmod +x installer.sh
+
 ```
 
 
