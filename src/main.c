@@ -69,8 +69,8 @@ static void apply_theme(VteTerminal *term, AppData *app) {
 
     gchar line[128];
 
-    GdkRGBA fg;
-    GdkRGBA bg;
+    GdkRGBA fg = {0};
+    GdkRGBA bg = {0};
     GdkRGBA palette[16];
 
     int color_index = 0;

@@ -79,5 +79,8 @@ there are 2 blink
 - true
 - false
 ----
+#### things to do
+- [ ] split code in more sections
+----
 This project it's relised under the MIT license.
 
