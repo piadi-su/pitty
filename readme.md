@@ -18,6 +18,7 @@ cd /tmp/pitty_build/scripts/
 
 chmod +x installer.sh
 
+./installer.sh
 ```
 
 
